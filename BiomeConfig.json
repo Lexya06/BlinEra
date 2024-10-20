@@ -1,0 +1,98 @@
+{
+  "meadow": {
+    "max": 20,
+    "min": 15,
+    "difFrequecy": 10,                    
+    "maxDifference": 1,
+    "size": 100,
+    "treeType": 0,
+    "treePeriod": 32,
+    "puddlePeriod": 96,
+    "puddleSize": 20,
+    "holePeriod": 630
+  },
+  "taiga": {
+    "max": 20,
+    "min": 15,
+    "difFrequecy": 11,
+    "maxDifference": 1,
+    "size": 30,
+    "treeType": 1,
+    "treePeriod": 42,
+    "puddlePeriod": 128,
+    "puddleSize": 14,
+    "holePeriod": 780
+  },
+  "desert": {
+    "max": 20,
+    "min": 15,
+    "difFrequecy": 8,
+    "maxDifference": 2,
+    "size": 30,
+    "treeType": 2,
+    "treePeriod": 64,
+    "puddlePeriod": 0,
+    "puddleSize": 0,
+    "holePeriod": 496
+  },
+  "swamp": {
+    "max": 14,
+    "min": 12,
+    "difFrequency": 10,
+    "maxDifference": 1,
+    "size": 28,
+    "treeType": 0,
+    "treePeriod": 96,
+    "puddlePeriod": 8,
+    "puddleSize": 4,
+    "holePeriod": 0
+  },
+  "dwarfMounts": {
+    "max": 156,
+    "min": 93,
+    "difFrequecy": 11,
+    "maxDifference": 3,
+    "size": 44,
+    "treeType": 1,
+    "treePeriod": 64,
+    "puddlePeriod": 0,
+    "puddleSize": 0,
+    "holePeriod": 1009
+  },
+  "goblinMounts": {
+    "max": 96,
+    "min": 64,
+    "difFrequecy": 20,
+    "maxDifference": 4,
+    "size": 34,
+    "treeType": 0,
+    "treePeriod": 76,
+    "puddlePeriod": 128,
+    "puddleSize": 2,
+    "holePeriod": 96
+  },
+  "beauty": {
+    "max": 24,
+    "min": 21,
+    "difFrequecy": 20,
+    "maxDifference": 1,
+    "size": 12,
+    "treeType": 4,
+    "treePeriod": 76,
+    "puddlePeriod": 128,
+    "puddleSize": 28,
+    "holePeriod": 0
+  },
+  "jungle": {
+    "max": 23,
+    "min": 20,
+    "difFrequecy": 9,
+    "maxDifference": 2,
+    "size": 19,
+    "treeType": 4,
+    "treePeriod": 32,
+    "puddlePeriod": 46,
+    "puddleSize": 11,
+    "holePeriod": 116
+  }
+}
