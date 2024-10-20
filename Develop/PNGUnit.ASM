@@ -29,7 +29,7 @@ section '.data' data readable writeable
         
         
         
-;;;;;;;;;;;;;яЌј Ћ”„Ўјя;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;ШШШ ШШШШШШ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 section '.text' code readable executable
 include 'C:\BlineraF\Blinera\Libraries\StringUnit.inc' 
 
@@ -62,14 +62,14 @@ proc StrCmp str1:DWORD, str2:DWORD
 pop ebx edi esi
 ret
 endp
-;сравнение массивов
+;ШШШШШШШШШ ШШШШШШШШ
 proc ArraysCmp arr1:DWORD, arr2:DWORD, size:DWORD
 push ecx esi edi
     mov     esi, [arr1]
     mov     edi, [arr2]
     mov     ecx, [size]
     
-    ;сравнение по количеству в ecx, станет 0 - равны
+    ;ШШШШШШШШШ ШШ ШШШШШШШШШШ Ш ecx, ШШШШШШ 0 - ШШШШШ
     repne   cmpsb
     cmp     ecx,0
     jnz     .endd
@@ -84,7 +84,7 @@ ret
 endp
 
 
-;получение информации о цветах пикселей
+;ШШШШШШШШШ ШШШШШШШШШШ Ш ШШШШШШ ШШШШШШШШ
 proc GetColoursInfo fileName:DWORD, width:DWORD, height:DWORD, colours:DWORD
 local readData dd ?
 local _buffer db 256 dup ?
@@ -94,7 +94,7 @@ local size dd 8
      invoke CreateFile, [fileName], GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
      mov    [fHandle],eax
      
-     ;работа с адресами локальных переменных
+     ;ШШШШШШ Ш ШШШШШШШШ ШШШШШШШШШ ШШШШШШШШШШ
      lea    ebx,[_buffer]
      lea    edx,[readData]
      lea    esi,[size]
