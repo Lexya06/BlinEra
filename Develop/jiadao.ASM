@@ -3,11 +3,11 @@
 
         include 'win32a.inc'
 
-        ;количество типов биомов
+        ;  
         biomeTypesCount = 8
-        ;количество параметров для генерации биомов
+        ;    
         biomeGenParCount = 10
-        ;максимальное количество биомов
+        ;  
         maxBiomeCount = 32
         
         maxHillCount = maxBiomeCount*2
@@ -15,7 +15,7 @@
         
         nil = 0
         
-        ;смещения параметров в записи
+        ;   
         max = 0
         min = 2
         difFrequecy = 4
@@ -27,7 +27,7 @@
         puddleSize = 16
         holePeriod = 18
 
-        ;макрос для получения случайного числа
+        ;    
         macro randomINLINE seed
         {
                mov     eax,[seed]
@@ -39,7 +39,7 @@
                mov     [seed],eax
         }
 
-        ;обмен двух 4б переменных
+        ;  4 
         macro swapD arg1,arg2
         {
                mov     eax,[arg1]
@@ -47,20 +47,20 @@
                mov     [arg1],eax 
         }
         
-        ;смещение названия биома в структуре
+        ;    
         biomeNameOffs = 4
-        ;максимальный размер названия биома
+        ;   
         biomeNameSize = 14
         
-        ;размер структуры с данными ТИПА биома
+        ;     
         biomeDataSize = 20
-        ;общая характеристика боиомов этого ТИПА
+        ;    
         struct biomeData
                genInfo  dd nil            
                biomeName db 16 dup(0)
         ends
         
-        ;описания структуры биома
+        ;  
         biomeInfoSize = 12
         relativeSize = 4
         startPoint = 6
@@ -73,7 +73,7 @@
                endPoint dw 0
         ends
         
-        ;описание структуры ландшафта
+        ;  
         landscInfoSize = 4
         landscStartPoint = 0
         landscEndPoint = 2
@@ -84,17 +84,17 @@
         
         worldHeight = 1000
 section '.data' data readable writeable
-        ;буффер для любых задач
+        ;   
         _buffer db 257 dup(0)
-        ;перепенная - расположение папки с файлами игры
+        ; -     
         _gvPackageName db 'C:\Users\user\Documents\Blinera',0
-        ;название кофиг файла
+        ;  
         _gvBConfigName db 'BiomeConfig.json',0
         _gvSlashStr    db '\',0
-        ;текущий сид мира для генерации
+        ;    
         _gvSeed   dd 444
         
-        ; описание всех типов биомов
+        ;    
         meadow biomeData        nil, 'meadow'
         taiga  biomeData        nil, 'taiga'
         desert biomeData        nil, 'desert'
@@ -104,13 +104,13 @@ section '.data' data readable writeable
         beauty biomeData        nil, 'beauty'
         jungle biomeData        nil, 'jungle'
         
-        ;массив всех типов биомов
+        ;   
         biomeTable dd meadow,taiga,desert,swamp,dwarfMounts,goblinMounts,beauty,jungle
         
-        ;буфферная переменная - ну а вдруг 
+        ;  -    
         temp    dd ?
         
-        ;строковые идентификаторы полей
+        ;  
         txtMax db "max",0
         txtMin db "min",0
         txtDifFrequecy db "difFrequecy",0
@@ -122,19 +122,19 @@ section '.data' data readable writeable
         txtPuddleSize db "puddleSize",0
         txtHolePeriod db "holePeriod",0
         
-        ;массив строковых идентификаторов полей
+        ;   
         txtTable dd txtMax,txtMin,txtDifFrequecy,txtMaxDifference,txtSize,txtTreeType,\
                     txtTreePeriod,txtPuddlePeriod,txtPuddleSize,txtHolePeriod
            
-        ;массив смещений в записи            
+        ;               
         offsTable db max,min,difFrequecy,maxDifference,size,treeType,treePeriod,\
                      puddlePeriod,puddleSize,holePeriod
         
-        ;адрес фактического конца массива 
+        ;    
         biomesEndAddr dd ?
-        ;количество биомов
+        ; 
         biomeCount dd 10
-        ;массив биомов, будующих в мире
+        ; ,   
         biomes db biomeInfoSize*maxBiomeCount dup(0)
         
         hillsCount dd 20
@@ -144,19 +144,19 @@ section '.data' data readable writeable
         woods db landscInfoSize*maxWoodCount dup(0)
         
         
-        ;ширина мира
+        ; 
         worldWidth dd 3000
         
         worldPoints dd ?
-;;;;;;;;;;;;;ЯНА ЛУЧШАЯ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 section '.text' code readable executable
 
-;функция объединения строк: str1 и str2- указатели на слаживаемые строки
-;strRes- адрес результирующей строки                                       
+;  : str1  str2-    
+;strRes-                                          
 proc strConcat  str1:DWORD, str2:DWORD, strRes:DWORD
         push    esi edi eax
         
-;копирование первой строки в начало результирующей
+;     
         cld
         mov     esi,[str1]
         mov     edi,[strRes]
@@ -167,7 +167,7 @@ proc strConcat  str1:DWORD, str2:DWORD, strRes:DWORD
         jne     @B
 
         dec     edi
-;копирование второй строки сразу после первой в результирующую
+;       
         mov     esi,[str2]
 @@:
         lodsb
@@ -179,23 +179,23 @@ proc strConcat  str1:DWORD, str2:DWORD, strRes:DWORD
         ret
 endp
 
-;поиск подстроки в строке: результат в eax- позиция str2 в str1
+;   :   eax-  str2  str1
 proc strPos str1:DWORD, str2:DWORD
         push    esi edi ebx  
         
         mov     bl,100
-;loop1 - перебор символов первой строки
+;loop1 -    
         mov     eax,[str1]
 .lst1:
         cmp     byte [eax],0
         je      .lend1
         
-;проверка на соответствие str2 строке, начинающей с текущей позиции в str1
+;   str2 ,      str1
         mov     esi, eax
         mov     edi,[str2]
 .lst11:
-;проверка "а мы ещё в строке?" и соответствие символов str2 к str1
-;в bl текущий символ str2
+; "    ?"    str2  str1
+; bl   str2
         mov     bl,[edi]
         cmp     byte [esi],0
         je      .lend11
@@ -210,16 +210,16 @@ proc strPos str1:DWORD, str2:DWORD
         
         jmp     .lst11      
 .lend11:        
-;если bl=0, то str2 полностью содержится в str1
+; bl=0,  str2    str1
         cmp     bl,0
         je      .lend1
-;переход к след. символу str1
+;  .  str1
         inc     eax
         
         jmp     .lst1
 .lend1:
 
-;если вторая строка не найдена, то bl=0, возвращаем -1
+;    ,  bl=0,  -1
         cmp     bl,0
         jne     @F
         sub     eax,[str1]
@@ -231,10 +231,10 @@ proc strPos str1:DWORD, str2:DWORD
         ret
 endp
 
-;в eax длина str1
+; eax  str1
 proc  strLen str1:DWORD
         mov     eax,[str1]
-;наращивание eax пока не встретится 0
+; eax    0
 .lst:        
         cmp     byte [eax],0
         je      .lend     
@@ -245,13 +245,13 @@ proc  strLen str1:DWORD
         ret
 endp
 
-;в eax- числовое значение первого десятичного числа в str1 
+; eax-       str1 
 proc  strToInt str1:DWORD
         push    ebx ecx edx esi
         mov     ebx,[str1]
         
-;поиск первой цифры в строке
-;если цифры нет- бобик сдох
+;    
+;  -  
 .lst1:        
         cmp     byte [ebx],'0'
         jb      @F      
@@ -264,12 +264,12 @@ proc  strToInt str1:DWORD
         jmp     .lst1
 .lend1:           
 
-;загрузка значений, соответствующих цифрам на стек        
-;cl - счётчик количества цифр
+; ,            
+;cl -   
         mov     cl,1
         xor     eax,eax
 .lst2:
-;цикл проходит пока не встретит не цифру
+;      
         mov     al,byte [ebx]
         sub     al,'0'
         cmp     al,9
@@ -589,7 +589,7 @@ local   ostBlocksForBiome dd ?
         mov     eax,[ostBlocks]
         add     [esi+size],ax
         
-;инициализация startPoint
+; startPoint
         mov     esi,biomes+startPoint+biomeInfoSize*1
 @@:
         mov     ax,[esi-biomeInfoSize]
@@ -600,7 +600,7 @@ local   ostBlocksForBiome dd ?
         cmp     esi,[biomesEndAddr]
         jb      @B        
 
-;инициализация endPoint
+; endPoint
         mov     esi,biomes+endPoint
 @@:
         mov     ax,[esi-endPoint+startPoint]
