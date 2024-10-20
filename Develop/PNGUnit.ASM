@@ -29,7 +29,7 @@ section '.data' data readable writeable
         
         
         
-;;;;;;;;;;;;;ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;˜˜˜ ˜˜˜˜˜˜;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 section '.text' code readable executable
 include 'C:\BlineraF\Blinera\Libraries\StringUnit.inc' 
 
@@ -62,14 +62,14 @@ proc StrCmp str1:DWORD, str2:DWORD
 pop ebx edi esi
 ret
 endp
-;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜
 proc ArraysCmp arr1:DWORD, arr2:DWORD, size:DWORD
 push ecx esi edi
     mov     esi, [arr1]
     mov     edi, [arr2]
     mov     ecx, [size]
     
-    ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ecx, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0 - ï¿½ï¿½ï¿½ï¿½ï¿½
+    ;˜˜˜˜˜˜˜˜˜ ˜˜ ˜˜˜˜˜˜˜˜˜˜ ˜ ecx, ˜˜˜˜˜˜ 0 - ˜˜˜˜˜
     repne   cmpsb
     cmp     ecx,0
     jnz     .endd
@@ -84,7 +84,7 @@ ret
 endp
 
 
-;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+;˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜ ˜ ˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜
 proc GetColoursInfo fileName:DWORD, width:DWORD, height:DWORD, colours:DWORD
 local readData dd ?
 local _buffer db 256 dup ?
@@ -94,7 +94,7 @@ local size dd 8
      invoke CreateFile, [fileName], GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
      mov    [fHandle],eax
      
-     ;ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+     ;˜˜˜˜˜˜ ˜ ˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜ ˜˜˜˜˜˜˜˜˜˜
      lea    ebx,[_buffer]
      lea    edx,[readData]
      lea    esi,[size]
