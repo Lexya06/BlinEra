@@ -3,11 +3,11 @@
 
         include 'win32a.inc'
 
-        ;количество типов биомов
+        ;РєРѕР»РёС‡РµСЃС‚РІРѕ С‚РёРїРѕРІ Р±РёРѕРјРѕРІ
         biomeTypesCount = 8
-        ;количество параметров для генерации биомов
+        ;РєРѕР»РёС‡РµСЃС‚РІРѕ РїР°СЂР°РјРµС‚СЂРѕРІ РґР»СЏ РіРµРЅРµСЂР°С†РёРё Р±РёРѕРјРѕРІ
         biomeGenParCount = 10
-        ;максимальное количество биомов
+        ;РјР°РєСЃРёРјР°Р»СЊРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ Р±РёРѕРјРѕРІ
         maxBiomeCount = 32
         
         maxHillCount = maxBiomeCount*2
@@ -15,7 +15,7 @@
         
         nil = 0
         
-        ;смещения параметров в записи
+        ;СЃРјРµС‰РµРЅРёСЏ РїР°СЂР°РјРµС‚СЂРѕРІ РІ Р·Р°РїРёСЃРё
         max = 0
         min = 2
         difFrequecy = 4
@@ -27,7 +27,7 @@
         puddleSize = 16
         holePeriod = 18
 
-        ;макрос для получения случайного числа
+        ;РјР°РєСЂРѕСЃ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃР»СѓС‡Р°Р№РЅРѕРіРѕ С‡РёСЃР»Р°
         macro randomINLINE seed
         {
                mov     eax,[seed]
@@ -39,7 +39,7 @@
                mov     [seed],eax
         }
 
-        ;обмен двух 4б переменных
+        ;РѕР±РјРµРЅ РґРІСѓС… 4Р± РїРµСЂРµРјРµРЅРЅС‹С…
         macro swapD arg1,arg2
         {
                mov     eax,[arg1]
@@ -47,20 +47,20 @@
                mov     [arg1],eax 
         }
         
-        ;смещение названия биома в структуре
+        ;СЃРјРµС‰РµРЅРёРµ РЅР°Р·РІР°РЅРёСЏ Р±РёРѕРјР° РІ СЃС‚СЂСѓРєС‚СѓСЂРµ
         biomeNameOffs = 4
-        ;максимальный размер названия биома
+        ;РјР°РєСЃРёРјР°Р»СЊРЅС‹Р№ СЂР°Р·РјРµСЂ РЅР°Р·РІР°РЅРёСЏ Р±РёРѕРјР°
         biomeNameSize = 14
         
-        ;размер структуры с данными ТИПА биома
+        ;СЂР°Р·РјРµСЂ СЃС‚СЂСѓРєС‚СѓСЂС‹ СЃ РґР°РЅРЅС‹РјРё РўРРџРђ Р±РёРѕРјР°
         biomeDataSize = 20
-        ;общая характеристика боиомов этого ТИПА
+        ;РѕР±С‰Р°СЏ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєР° Р±РѕРёРѕРјРѕРІ СЌС‚РѕРіРѕ РўРРџРђ
         struct biomeData
                genInfo  dd nil            
                biomeName db 16 dup(0)
         ends
         
-        ;описания структуры биома
+        ;РѕРїРёСЃР°РЅРёСЏ СЃС‚СЂСѓРєС‚СѓСЂС‹ Р±РёРѕРјР°
         biomeInfoSize = 12
         relativeSize = 4
         startPoint = 6
@@ -73,7 +73,7 @@
                endPoint dw 0
         ends
         
-        ;описание структуры ландшафта
+        ;РѕРїРёСЃР°РЅРёРµ СЃС‚СЂСѓРєС‚СѓСЂС‹ Р»Р°РЅРґС€Р°С„С‚Р°
         landscInfoSize = 4
         landscStartPoint = 0
         landscEndPoint = 2
@@ -84,17 +84,17 @@
         
         worldHeight = 1000
 section '.data' data readable writeable
-        ;буффер для любых задач
+        ;Р±СѓС„С„РµСЂ РґР»СЏ Р»СЋР±С‹С… Р·Р°РґР°С‡
         _buffer db 257 dup(0)
-        ;перепенная - расположение папки с файлами игры
+        ;РїРµСЂРµРїРµРЅРЅР°СЏ - СЂР°СЃРїРѕР»РѕР¶РµРЅРёРµ РїР°РїРєРё СЃ С„Р°Р№Р»Р°РјРё РёРіСЂС‹
         _gvPackageName db 'C:\Users\user\Documents\Blinera',0
-        ;название кофиг файла
+        ;РЅР°Р·РІР°РЅРёРµ РєРѕС„РёРі С„Р°Р№Р»Р°
         _gvBConfigName db 'BiomeConfig.json',0
         _gvSlashStr    db '\',0
-        ;текущий сид мира для генерации
+        ;С‚РµРєСѓС‰РёР№ СЃРёРґ РјРёСЂР° РґР»СЏ РіРµРЅРµСЂР°С†РёРё
         _gvSeed   dd 444
         
-        ; описание всех типов биомов
+        ; РѕРїРёСЃР°РЅРёРµ РІСЃРµС… С‚РёРїРѕРІ Р±РёРѕРјРѕРІ
         meadow biomeData        nil, 'meadow'
         taiga  biomeData        nil, 'taiga'
         desert biomeData        nil, 'desert'
@@ -104,13 +104,13 @@ section '.data' data readable writeable
         beauty biomeData        nil, 'beauty'
         jungle biomeData        nil, 'jungle'
         
-        ;массив всех типов биомов
+        ;РјР°СЃСЃРёРІ РІСЃРµС… С‚РёРїРѕРІ Р±РёРѕРјРѕРІ
         biomeTable dd meadow,taiga,desert,swamp,dwarfMounts,goblinMounts,beauty,jungle
         
-        ;буфферная переменная - ну а вдруг 
+        ;Р±СѓС„С„РµСЂРЅР°СЏ РїРµСЂРµРјРµРЅРЅР°СЏ - РЅСѓ Р° РІРґСЂСѓРі 
         temp    dd ?
         
-        ;строковые идентификаторы полей
+        ;СЃС‚СЂРѕРєРѕРІС‹Рµ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂС‹ РїРѕР»РµР№
         txtMax db "max",0
         txtMin db "min",0
         txtDifFrequecy db "difFrequecy",0
@@ -122,19 +122,19 @@ section '.data' data readable writeable
         txtPuddleSize db "puddleSize",0
         txtHolePeriod db "holePeriod",0
         
-        ;массив строковых идентификаторов полей
+        ;РјР°СЃСЃРёРІ СЃС‚СЂРѕРєРѕРІС‹С… РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РїРѕР»РµР№
         txtTable dd txtMax,txtMin,txtDifFrequecy,txtMaxDifference,txtSize,txtTreeType,\
                     txtTreePeriod,txtPuddlePeriod,txtPuddleSize,txtHolePeriod
            
-        ;массив смещений в записи            
+        ;РјР°СЃСЃРёРІ СЃРјРµС‰РµРЅРёР№ РІ Р·Р°РїРёСЃРё            
         offsTable db max,min,difFrequecy,maxDifference,size,treeType,treePeriod,\
                      puddlePeriod,puddleSize,holePeriod
         
-        ;адрес фактического конца массива 
+        ;Р°РґСЂРµСЃ С„Р°РєС‚РёС‡РµСЃРєРѕРіРѕ РєРѕРЅС†Р° РјР°СЃСЃРёРІР° 
         biomesEndAddr dd ?
-        ;количество биомов
+        ;РєРѕР»РёС‡РµСЃС‚РІРѕ Р±РёРѕРјРѕРІ
         biomeCount dd 10
-        ;массив биомов, будующих в мире
+        ;РјР°СЃСЃРёРІ Р±РёРѕРјРѕРІ, Р±СѓРґСѓСЋС‰РёС… РІ РјРёСЂРµ
         biomes db biomeInfoSize*maxBiomeCount dup(0)
         
         hillsCount dd 20
@@ -144,19 +144,19 @@ section '.data' data readable writeable
         woods db landscInfoSize*maxWoodCount dup(0)
         
         
-        ;ширина мира
+        ;С€РёСЂРёРЅР° РјРёСЂР°
         worldWidth dd 3000
         
         worldPoints dd ?
-;;;;;;;;;;;;;ЯНА ЛУЧШАЯ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;РЇРќРђ Р›РЈР§РЁРђРЇ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 section '.text' code readable executable
 
-;функция объединения строк: str1 и str2- указатели на слаживаемые строки
-;strRes- адрес результирующей строки                                       
+;С„СѓРЅРєС†РёСЏ РѕР±СЉРµРґРёРЅРµРЅРёСЏ СЃС‚СЂРѕРє: str1 Рё str2- СѓРєР°Р·Р°С‚РµР»Рё РЅР° СЃР»Р°Р¶РёРІР°РµРјС‹Рµ СЃС‚СЂРѕРєРё
+;strRes- Р°РґСЂРµСЃ СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰РµР№ СЃС‚СЂРѕРєРё                                       
 proc strConcat  str1:DWORD, str2:DWORD, strRes:DWORD
         push    esi edi eax
         
-;копирование первой строки в начало результирующей
+;РєРѕРїРёСЂРѕРІР°РЅРёРµ РїРµСЂРІРѕР№ СЃС‚СЂРѕРєРё РІ РЅР°С‡Р°Р»Рѕ СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰РµР№
         cld
         mov     esi,[str1]
         mov     edi,[strRes]
@@ -167,7 +167,7 @@ proc strConcat  str1:DWORD, str2:DWORD, strRes:DWORD
         jne     @B
 
         dec     edi
-;копирование второй строки сразу после первой в результирующую
+;РєРѕРїРёСЂРѕРІР°РЅРёРµ РІС‚РѕСЂРѕР№ СЃС‚СЂРѕРєРё СЃСЂР°Р·Сѓ РїРѕСЃР»Рµ РїРµСЂРІРѕР№ РІ СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰СѓСЋ
         mov     esi,[str2]
 @@:
         lodsb
@@ -179,23 +179,23 @@ proc strConcat  str1:DWORD, str2:DWORD, strRes:DWORD
         ret
 endp
 
-;поиск подстроки в строке: результат в eax- позиция str2 в str1
+;РїРѕРёСЃРє РїРѕРґСЃС‚СЂРѕРєРё РІ СЃС‚СЂРѕРєРµ: СЂРµР·СѓР»СЊС‚Р°С‚ РІ eax- РїРѕР·РёС†РёСЏ str2 РІ str1
 proc strPos str1:DWORD, str2:DWORD
         push    esi edi ebx  
         
         mov     bl,100
-;loop1 - перебор символов первой строки
+;loop1 - РїРµСЂРµР±РѕСЂ СЃРёРјРІРѕР»РѕРІ РїРµСЂРІРѕР№ СЃС‚СЂРѕРєРё
         mov     eax,[str1]
 .lst1:
         cmp     byte [eax],0
         je      .lend1
         
-;проверка на соответствие str2 строке, начинающей с текущей позиции в str1
+;РїСЂРѕРІРµСЂРєР° РЅР° СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ str2 СЃС‚СЂРѕРєРµ, РЅР°С‡РёРЅР°СЋС‰РµР№ СЃ С‚РµРєСѓС‰РµР№ РїРѕР·РёС†РёРё РІ str1
         mov     esi, eax
         mov     edi,[str2]
 .lst11:
-;проверка "а мы ещё в строке?" и соответствие символов str2 к str1
-;в bl текущий символ str2
+;РїСЂРѕРІРµСЂРєР° "Р° РјС‹ РµС‰С‘ РІ СЃС‚СЂРѕРєРµ?" Рё СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ СЃРёРјРІРѕР»РѕРІ str2 Рє str1
+;РІ bl С‚РµРєСѓС‰РёР№ СЃРёРјРІРѕР» str2
         mov     bl,[edi]
         cmp     byte [esi],0
         je      .lend11
@@ -210,16 +210,16 @@ proc strPos str1:DWORD, str2:DWORD
         
         jmp     .lst11      
 .lend11:        
-;если bl=0, то str2 полностью содержится в str1
+;РµСЃР»Рё bl=0, С‚Рѕ str2 РїРѕР»РЅРѕСЃС‚СЊСЋ СЃРѕРґРµСЂР¶РёС‚СЃСЏ РІ str1
         cmp     bl,0
         je      .lend1
-;переход к след. символу str1
+;РїРµСЂРµС…РѕРґ Рє СЃР»РµРґ. СЃРёРјРІРѕР»Сѓ str1
         inc     eax
         
         jmp     .lst1
 .lend1:
 
-;если вторая строка не найдена, то bl=0, возвращаем -1
+;РµСЃР»Рё РІС‚РѕСЂР°СЏ СЃС‚СЂРѕРєР° РЅРµ РЅР°Р№РґРµРЅР°, С‚Рѕ bl=0, РІРѕР·РІСЂР°С‰Р°РµРј -1
         cmp     bl,0
         jne     @F
         sub     eax,[str1]
@@ -231,10 +231,10 @@ proc strPos str1:DWORD, str2:DWORD
         ret
 endp
 
-;в eax длина str1
+;РІ eax РґР»РёРЅР° str1
 proc  strLen str1:DWORD
         mov     eax,[str1]
-;наращивание eax пока не встретится 0
+;РЅР°СЂР°С‰РёРІР°РЅРёРµ eax РїРѕРєР° РЅРµ РІСЃС‚СЂРµС‚РёС‚СЃСЏ 0
 .lst:        
         cmp     byte [eax],0
         je      .lend     
@@ -245,13 +245,13 @@ proc  strLen str1:DWORD
         ret
 endp
 
-;в eax- числовое значение первого десятичного числа в str1 
+;РІ eax- С‡РёСЃР»РѕРІРѕРµ Р·РЅР°С‡РµРЅРёРµ РїРµСЂРІРѕРіРѕ РґРµСЃСЏС‚РёС‡РЅРѕРіРѕ С‡РёСЃР»Р° РІ str1 
 proc  strToInt str1:DWORD
         push    ebx ecx edx esi
         mov     ebx,[str1]
         
-;поиск первой цифры в строке
-;если цифры нет- бобик сдох
+;РїРѕРёСЃРє РїРµСЂРІРѕР№ С†РёС„СЂС‹ РІ СЃС‚СЂРѕРєРµ
+;РµСЃР»Рё С†РёС„СЂС‹ РЅРµС‚- Р±РѕР±РёРє СЃРґРѕС…
 .lst1:        
         cmp     byte [ebx],'0'
         jb      @F      
@@ -264,12 +264,12 @@ proc  strToInt str1:DWORD
         jmp     .lst1
 .lend1:           
 
-;загрузка значений, соответствующих цифрам на стек        
-;cl - счётчик количества цифр
+;Р·Р°РіСЂСѓР·РєР° Р·РЅР°С‡РµРЅРёР№, СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёС… С†РёС„СЂР°Рј РЅР° СЃС‚РµРє        
+;cl - СЃС‡С‘С‚С‡РёРє РєРѕР»РёС‡РµСЃС‚РІР° С†РёС„СЂ
         mov     cl,1
         xor     eax,eax
 .lst2:
-;цикл проходит пока не встретит не цифру
+;С†РёРєР» РїСЂРѕС…РѕРґРёС‚ РїРѕРєР° РЅРµ РІСЃС‚СЂРµС‚РёС‚ РЅРµ С†РёС„СЂСѓ
         mov     al,byte [ebx]
         sub     al,'0'
         cmp     al,9
@@ -589,7 +589,7 @@ local   ostBlocksForBiome dd ?
         mov     eax,[ostBlocks]
         add     [esi+size],ax
         
-;инициализация startPoint
+;РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ startPoint
         mov     esi,biomes+startPoint+biomeInfoSize*1
 @@:
         mov     ax,[esi-biomeInfoSize]
@@ -600,7 +600,7 @@ local   ostBlocksForBiome dd ?
         cmp     esi,[biomesEndAddr]
         jb      @B        
 
-;инициализация endPoint
+;РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ endPoint
         mov     esi,biomes+endPoint
 @@:
         mov     ax,[esi-endPoint+startPoint]

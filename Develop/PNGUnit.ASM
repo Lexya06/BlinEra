@@ -29,7 +29,7 @@ section '.data' data readable writeable
         
         
         
-;;;;;;;;;;;;;ЯНА ЛУЧШАЯ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;РЇРќРђ Р›РЈР§РЁРђРЇ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 section '.text' code readable executable
 include 'C:\BlineraF\Blinera\Libraries\StringUnit.inc' 
 
@@ -62,14 +62,14 @@ proc StrCmp str1:DWORD, str2:DWORD
 pop ebx edi esi
 ret
 endp
-;сравнение массивов
+;СЃСЂР°РІРЅРµРЅРёРµ РјР°СЃСЃРёРІРѕРІ
 proc ArraysCmp arr1:DWORD, arr2:DWORD, size:DWORD
 push ecx esi edi
     mov     esi, [arr1]
     mov     edi, [arr2]
     mov     ecx, [size]
     
-    ;сравнение по количеству в ecx, станет 0 - равны
+    ;СЃСЂР°РІРЅРµРЅРёРµ РїРѕ РєРѕР»РёС‡РµСЃС‚РІСѓ РІ ecx, СЃС‚Р°РЅРµС‚ 0 - СЂР°РІРЅС‹
     repne   cmpsb
     cmp     ecx,0
     jnz     .endd
@@ -84,7 +84,7 @@ ret
 endp
 
 
-;получение информации о цветах пикселей
+;РїРѕР»СѓС‡РµРЅРёРµ РёРЅС„РѕСЂРјР°С†РёРё Рѕ С†РІРµС‚Р°С… РїРёРєСЃРµР»РµР№
 proc GetColoursInfo fileName:DWORD, width:DWORD, height:DWORD, colours:DWORD
 local readData dd ?
 local _buffer db 256 dup ?
@@ -94,7 +94,7 @@ local size dd 8
      invoke CreateFile, [fileName], GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
      mov    [fHandle],eax
      
-     ;работа с адресами локальных переменных
+     ;СЂР°Р±РѕС‚Р° СЃ Р°РґСЂРµСЃР°РјРё Р»РѕРєР°Р»СЊРЅС‹С… РїРµСЂРµРјРµРЅРЅС‹С…
      lea    ebx,[_buffer]
      lea    edx,[readData]
      lea    esi,[size]
