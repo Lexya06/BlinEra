@@ -1,7 +1,7 @@
         format PE GUI 4.0
         entry start
 
-        include 'win32a.inc' вап
+        include 'win32a.inc'
          
 
         nil = 0
