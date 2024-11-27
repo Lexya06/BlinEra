@@ -3,19 +3,25 @@
 
         include 'win32a.inc'
 
-        ;РєРѕР»РёС‡РµСЃС‚РІРѕ С‚РёРїРѕРІ Р±РёРѕРјРѕРІ
+        ;количество типов биомов
         biomeTypesCount = 8
-        ;РєРѕР»РёС‡РµСЃС‚РІРѕ РїР°СЂР°РјРµС‚СЂРѕРІ РґР»СЏ РіРµРЅРµСЂР°С†РёРё Р±РёРѕРјРѕРІ
+        ;количество параметров для генерации биомов
         biomeGenParCount = 10
-        ;РјР°РєСЃРёРјР°Р»СЊРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ Р±РёРѕРјРѕРІ
+        ;максимальное количество биомов
         maxBiomeCount = 32
         
         maxHillCount = maxBiomeCount*2
         maxWoodCount = maxBiomeCount*3
         
+        AIR    = 0
+        STONE  = 1
+        DIRT   = 2
+        DIVOT  = 3
+        SAND   = 4
+        
         nil = 0
         
-        ;СЃРјРµС‰РµРЅРёСЏ РїР°СЂР°РјРµС‚СЂРѕРІ РІ Р·Р°РїРёСЃРё
+        ;смещения параметров в записи
         max = 0
         min = 2
         difFrequecy = 4
@@ -27,7 +33,7 @@
         puddleSize = 16
         holePeriod = 18
 
-        ;РјР°РєСЂРѕСЃ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃР»СѓС‡Р°Р№РЅРѕРіРѕ С‡РёСЃР»Р°
+        ;макрос для получения случайного числа
         macro randomINLINE seed
         {
                mov     eax,[seed]
@@ -39,7 +45,14 @@
                mov     [seed],eax
         }
 
-        ;РѕР±РјРµРЅ РґРІСѓС… 4Р± РїРµСЂРµРјРµРЅРЅС‹С…
+        macro randomInlineLITE regRes
+        {
+               mov     ecx,regRes
+               shl     ecx,1
+               adc     regRes,ecx
+               rcr     regRes,13 
+        } 
+        ;обмен двух 4б переменных
         macro swapD arg1,arg2
         {
                mov     eax,[arg1]
@@ -47,20 +60,41 @@
                mov     [arg1],eax 
         }
         
-        ;СЃРјРµС‰РµРЅРёРµ РЅР°Р·РІР°РЅРёСЏ Р±РёРѕРјР° РІ СЃС‚СЂСѓРєС‚СѓСЂРµ
+        macro sumAround regPos,regStrSize
+        {  
+               mov     esi,regPos
+               sub     esi,4
+               add     eax,[esi]
+               add     eax,[esi+8]
+               sub     esi,regStrSize
+               
+               add     eax,[esi]
+               add     eax,[esi+4]
+               add     eax,[esi+8]
+               lea     esi,[esi+regStrSize*2]
+               
+               add     eax,[esi]
+               add     eax,[esi+4]
+               add     eax,[esi+8] 
+        }
+        ;смещение названия биома в структуре
         biomeNameOffs = 4
-        ;РјР°РєСЃРёРјР°Р»СЊРЅС‹Р№ СЂР°Р·РјРµСЂ РЅР°Р·РІР°РЅРёСЏ Р±РёРѕРјР°
-        biomeNameSize = 14
+        biomeBottomBlockOffs = 20
+        biomeUpperBlockOffs = 24
+        ;максимальный размер названия биома
+        biomeNameSize = 15
         
-        ;СЂР°Р·РјРµСЂ СЃС‚СЂСѓРєС‚СѓСЂС‹ СЃ РґР°РЅРЅС‹РјРё РўРРџРђ Р±РёРѕРјР°
-        biomeDataSize = 20
-        ;РѕР±С‰Р°СЏ С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРєР° Р±РѕРёРѕРјРѕРІ СЌС‚РѕРіРѕ РўРРџРђ
+        ;размер структуры с данными ТИПА биома
+        biomeDataSize = 28
+        ;общая характеристика боиомов этого ТИПА
         struct biomeData
                genInfo  dd nil            
                biomeName db 16 dup(0)
+               bottomBlock dd STONE
+               upperBlock dd STONE
         ends
         
-        ;РѕРїРёСЃР°РЅРёСЏ СЃС‚СЂСѓРєС‚СѓСЂС‹ Р±РёРѕРјР°
+        ;описания структуры биома
         biomeInfoSize = 12
         relativeSize = 4
         startPoint = 6
@@ -73,7 +107,7 @@
                endPoint dw 0
         ends
         
-        ;РѕРїРёСЃР°РЅРёРµ СЃС‚СЂСѓРєС‚СѓСЂС‹ Р»Р°РЅРґС€Р°С„С‚Р°
+        ;описание структуры ландшафта
         landscInfoSize = 4
         landscStartPoint = 0
         landscEndPoint = 2
@@ -83,34 +117,55 @@
         ends
         
         worldHeight = 1000
+        worldZeroHeight = 400
+        
+        xOffs = 4
+        yOffs = 8
+        hOffs = 12
+        bOffs = 16
+        cOffs = 20
+        dOffs = 24
+        struct splInfo
+               colPoints dd 0
+               x dd ?
+               y dd ?
+               h dd ?
+               b dd ?
+               c dd ?
+               d dd ?
+        ends
+        
 section '.data' data readable writeable
-        ;Р±СѓС„С„РµСЂ РґР»СЏ Р»СЋР±С‹С… Р·Р°РґР°С‡
+        ;буффер для любых задач
         _buffer db 257 dup(0)
-        ;РїРµСЂРµРїРµРЅРЅР°СЏ - СЂР°СЃРїРѕР»РѕР¶РµРЅРёРµ РїР°РїРєРё СЃ С„Р°Р№Р»Р°РјРё РёРіСЂС‹
+        ;перепенная - расположение папки с файлами игры
         _gvPackageName db 'C:\Users\user\Documents\Blinera',0
-        ;РЅР°Р·РІР°РЅРёРµ РєРѕС„РёРі С„Р°Р№Р»Р°
+        _testF db 'C:\testF.txt',0
+        _tempB db 0
+        _nextStr db 13,10
+        ;название кофиг файла
         _gvBConfigName db 'BiomeConfig.json',0
         _gvSlashStr    db '\',0
-        ;С‚РµРєСѓС‰РёР№ СЃРёРґ РјРёСЂР° РґР»СЏ РіРµРЅРµСЂР°С†РёРё
+        ;текущий сид мира для генерации
         _gvSeed   dd 444
         
-        ; РѕРїРёСЃР°РЅРёРµ РІСЃРµС… С‚РёРїРѕРІ Р±РёРѕРјРѕРІ
-        meadow biomeData        nil, 'meadow'
-        taiga  biomeData        nil, 'taiga'
-        desert biomeData        nil, 'desert'
-        swamp  biomeData        nil, 'swamp'
-        dwarfMounts  biomeData  nil, 'dwarfMounts'
-        goblinMounts biomeData  nil, 'goblinMounts'
-        beauty biomeData        nil, 'beauty'
-        jungle biomeData        nil, 'jungle'
+        ; описание всех типов биомов
+        meadow biomeData        nil, 'meadow',DIRT,DIVOT
+        taiga  biomeData        nil, 'taiga',DIRT,DIVOT
+        desert biomeData        nil, 'desert',SAND,SAND
+        swamp  biomeData        nil, 'swamp',DIRT,DIVOT
+        dwarfMounts  biomeData  nil, 'dwarfMounts',STONE,STONE
+        goblinMounts biomeData  nil, 'goblinMounts',STONE,STONE
+        beauty biomeData        nil, 'beauty',DIRT,DIVOT
+        jungle biomeData        nil, 'jungle',DIRT,DIVOT
         
-        ;РјР°СЃСЃРёРІ РІСЃРµС… С‚РёРїРѕРІ Р±РёРѕРјРѕРІ
+        ;массив всех типов биомов
         biomeTable dd meadow,taiga,desert,swamp,dwarfMounts,goblinMounts,beauty,jungle
         
-        ;Р±СѓС„С„РµСЂРЅР°СЏ РїРµСЂРµРјРµРЅРЅР°СЏ - РЅСѓ Р° РІРґСЂСѓРі 
+        ;буфферная переменная - ну а вдруг 
         temp    dd ?
         
-        ;СЃС‚СЂРѕРєРѕРІС‹Рµ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂС‹ РїРѕР»РµР№
+        ;строковые идентификаторы полей
         txtMax db "max",0
         txtMin db "min",0
         txtDifFrequecy db "difFrequecy",0
@@ -122,19 +177,19 @@ section '.data' data readable writeable
         txtPuddleSize db "puddleSize",0
         txtHolePeriod db "holePeriod",0
         
-        ;РјР°СЃСЃРёРІ СЃС‚СЂРѕРєРѕРІС‹С… РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РїРѕР»РµР№
+        ;массив строковых идентификаторов полей
         txtTable dd txtMax,txtMin,txtDifFrequecy,txtMaxDifference,txtSize,txtTreeType,\
                     txtTreePeriod,txtPuddlePeriod,txtPuddleSize,txtHolePeriod
            
-        ;РјР°СЃСЃРёРІ СЃРјРµС‰РµРЅРёР№ РІ Р·Р°РїРёСЃРё            
+        ;массив смещений в записи            
         offsTable db max,min,difFrequecy,maxDifference,size,treeType,treePeriod,\
                      puddlePeriod,puddleSize,holePeriod
         
-        ;Р°РґСЂРµСЃ С„Р°РєС‚РёС‡РµСЃРєРѕРіРѕ РєРѕРЅС†Р° РјР°СЃСЃРёРІР° 
+        ;адрес фактического конца массива 
         biomesEndAddr dd ?
-        ;РєРѕР»РёС‡РµСЃС‚РІРѕ Р±РёРѕРјРѕРІ
+        ;количество биомов
         biomeCount dd 10
-        ;РјР°СЃСЃРёРІ Р±РёРѕРјРѕРІ, Р±СѓРґСѓСЋС‰РёС… РІ РјРёСЂРµ
+        ;массив биомов, будующих в мире
         biomes db biomeInfoSize*maxBiomeCount dup(0)
         
         hillsCount dd 20
@@ -143,20 +198,25 @@ section '.data' data readable writeable
         woodsCount dd 30
         woods db landscInfoSize*maxWoodCount dup(0)
         
-        
-        ;С€РёСЂРёРЅР° РјРёСЂР°
+        ;ширина мира
         worldWidth dd 3000
         
         worldPoints dd ?
-;;;;;;;;;;;;;РЇРќРђ Р›РЈР§РЁРђРЇ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        
+        worldSplain splInfo
+        
+        _genNaD_Table dd 1,1,1,0,0,1,0,0,\
+                         1,1,1,0,1,1,0,0
+         
+;;;;;;;;;;;;;ЯНА ЛУЧШАЯ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 section '.text' code readable executable
 
-;С„СѓРЅРєС†РёСЏ РѕР±СЉРµРґРёРЅРµРЅРёСЏ СЃС‚СЂРѕРє: str1 Рё str2- СѓРєР°Р·Р°С‚РµР»Рё РЅР° СЃР»Р°Р¶РёРІР°РµРјС‹Рµ СЃС‚СЂРѕРєРё
-;strRes- Р°РґСЂРµСЃ СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰РµР№ СЃС‚СЂРѕРєРё                                       
+;функция объединения строк: str1 и str2- указатели на слаживаемые строки
+;strRes- адрес результирующей строки                                       
 proc strConcat  str1:DWORD, str2:DWORD, strRes:DWORD
         push    esi edi eax
         
-;РєРѕРїРёСЂРѕРІР°РЅРёРµ РїРµСЂРІРѕР№ СЃС‚СЂРѕРєРё РІ РЅР°С‡Р°Р»Рѕ СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰РµР№
+;копирование первой строки в начало результирующей
         cld
         mov     esi,[str1]
         mov     edi,[strRes]
@@ -167,7 +227,7 @@ proc strConcat  str1:DWORD, str2:DWORD, strRes:DWORD
         jne     @B
 
         dec     edi
-;РєРѕРїРёСЂРѕРІР°РЅРёРµ РІС‚РѕСЂРѕР№ СЃС‚СЂРѕРєРё СЃСЂР°Р·Сѓ РїРѕСЃР»Рµ РїРµСЂРІРѕР№ РІ СЂРµР·СѓР»СЊС‚РёСЂСѓСЋС‰СѓСЋ
+;копирование второй строки сразу после первой в результирующую
         mov     esi,[str2]
 @@:
         lodsb
@@ -179,23 +239,23 @@ proc strConcat  str1:DWORD, str2:DWORD, strRes:DWORD
         ret
 endp
 
-;РїРѕРёСЃРє РїРѕРґСЃС‚СЂРѕРєРё РІ СЃС‚СЂРѕРєРµ: СЂРµР·СѓР»СЊС‚Р°С‚ РІ eax- РїРѕР·РёС†РёСЏ str2 РІ str1
+;поиск подстроки в строке: результат в eax- позиция str2 в str1
 proc strPos str1:DWORD, str2:DWORD
         push    esi edi ebx  
         
         mov     bl,100
-;loop1 - РїРµСЂРµР±РѕСЂ СЃРёРјРІРѕР»РѕРІ РїРµСЂРІРѕР№ СЃС‚СЂРѕРєРё
+;loop1 - перебор символов первой строки
         mov     eax,[str1]
 .lst1:
         cmp     byte [eax],0
         je      .lend1
         
-;РїСЂРѕРІРµСЂРєР° РЅР° СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ str2 СЃС‚СЂРѕРєРµ, РЅР°С‡РёРЅР°СЋС‰РµР№ СЃ С‚РµРєСѓС‰РµР№ РїРѕР·РёС†РёРё РІ str1
+;проверка на соответствие str2 строке, начинающей с текущей позиции в str1
         mov     esi, eax
         mov     edi,[str2]
 .lst11:
-;РїСЂРѕРІРµСЂРєР° "Р° РјС‹ РµС‰С‘ РІ СЃС‚СЂРѕРєРµ?" Рё СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ СЃРёРјРІРѕР»РѕРІ str2 Рє str1
-;РІ bl С‚РµРєСѓС‰РёР№ СЃРёРјРІРѕР» str2
+;проверка "а мы ещё в строке?" и соответствие символов str2 к str1
+;в bl текущий символ str2
         mov     bl,[edi]
         cmp     byte [esi],0
         je      .lend11
@@ -210,16 +270,16 @@ proc strPos str1:DWORD, str2:DWORD
         
         jmp     .lst11      
 .lend11:        
-;РµСЃР»Рё bl=0, С‚Рѕ str2 РїРѕР»РЅРѕСЃС‚СЊСЋ СЃРѕРґРµСЂР¶РёС‚СЃСЏ РІ str1
+;если bl=0, то str2 полностью содержится в str1
         cmp     bl,0
         je      .lend1
-;РїРµСЂРµС…РѕРґ Рє СЃР»РµРґ. СЃРёРјРІРѕР»Сѓ str1
+;переход к след. символу str1
         inc     eax
         
         jmp     .lst1
 .lend1:
 
-;РµСЃР»Рё РІС‚РѕСЂР°СЏ СЃС‚СЂРѕРєР° РЅРµ РЅР°Р№РґРµРЅР°, С‚Рѕ bl=0, РІРѕР·РІСЂР°С‰Р°РµРј -1
+;если вторая строка не найдена, то bl=0, возвращаем -1
         cmp     bl,0
         jne     @F
         sub     eax,[str1]
@@ -231,10 +291,10 @@ proc strPos str1:DWORD, str2:DWORD
         ret
 endp
 
-;РІ eax РґР»РёРЅР° str1
+;в eax длина str1
 proc  strLen str1:DWORD
         mov     eax,[str1]
-;РЅР°СЂР°С‰РёРІР°РЅРёРµ eax РїРѕРєР° РЅРµ РІСЃС‚СЂРµС‚РёС‚СЃСЏ 0
+;наращивание eax пока не встретится 0
 .lst:        
         cmp     byte [eax],0
         je      .lend     
@@ -245,13 +305,13 @@ proc  strLen str1:DWORD
         ret
 endp
 
-;РІ eax- С‡РёСЃР»РѕРІРѕРµ Р·РЅР°С‡РµРЅРёРµ РїРµСЂРІРѕРіРѕ РґРµСЃСЏС‚РёС‡РЅРѕРіРѕ С‡РёСЃР»Р° РІ str1 
+;в eax- числовое значение первого десятичного числа в str1 
 proc  strToInt str1:DWORD
         push    ebx ecx edx esi
         mov     ebx,[str1]
         
-;РїРѕРёСЃРє РїРµСЂРІРѕР№ С†РёС„СЂС‹ РІ СЃС‚СЂРѕРєРµ
-;РµСЃР»Рё С†РёС„СЂС‹ РЅРµС‚- Р±РѕР±РёРє СЃРґРѕС…
+;поиск первой цифры в строке
+;если цифры нет- бобик сдох
 .lst1:        
         cmp     byte [ebx],'0'
         jb      @F      
@@ -264,12 +324,12 @@ proc  strToInt str1:DWORD
         jmp     .lst1
 .lend1:           
 
-;Р·Р°РіСЂСѓР·РєР° Р·РЅР°С‡РµРЅРёР№, СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёС… С†РёС„СЂР°Рј РЅР° СЃС‚РµРє        
-;cl - СЃС‡С‘С‚С‡РёРє РєРѕР»РёС‡РµСЃС‚РІР° С†РёС„СЂ
+;загрузка значений, соответствующих цифрам на стек        
+;cl - счётчик количества цифр
         mov     cl,1
         xor     eax,eax
 .lst2:
-;С†РёРєР» РїСЂРѕС…РѕРґРёС‚ РїРѕРєР° РЅРµ РІСЃС‚СЂРµС‚РёС‚ РЅРµ С†РёС„СЂСѓ
+;цикл проходит пока не встретит не цифру
         mov     al,byte [ebx]
         sub     al,'0'
         cmp     al,9
@@ -423,15 +483,16 @@ proc   freeBiomeInfo
 endp
 
 
-proc  randomB min:DWORD,max:DWORD
+proc  randomB min:WORD,max:WORD
         push    edx ecx
         xor     edx,edx
         randomINLINE _gvSeed
-        mov     ecx,[max]
-        sub     ecx,[min]
+        mov     ecx,0
+        mov     cx,[max]
+        sub     cx,[min]
         div     ecx
         
-        add     edx,[min]
+        add     dx,[min]
         mov     eax,edx
         pop     ecx edx
         ret
@@ -589,7 +650,7 @@ local   ostBlocksForBiome dd ?
         mov     eax,[ostBlocks]
         add     [esi+size],ax
         
-;РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ startPoint
+;инициализация startPoint
         mov     esi,biomes+startPoint+biomeInfoSize*1
 @@:
         mov     ax,[esi-biomeInfoSize]
@@ -600,7 +661,7 @@ local   ostBlocksForBiome dd ?
         cmp     esi,[biomesEndAddr]
         jb      @B        
 
-;РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ endPoint
+;инициализация endPoint
         mov     esi,biomes+endPoint
 @@:
         mov     ax,[esi-endPoint+startPoint]
@@ -705,7 +766,7 @@ proc isLandsc landType:DWORD,coord:WORD
         jmp     .lst
 .lend:
         cmp     word[esi-landscEndPoint+landscStartPoint],ax
-        jl      .endd
+        jb      .endd
         
         mov     eax,1
 .endd:
@@ -743,56 +804,813 @@ endp
 
 
 proc worldMakePoints
-
+local directOst db 1
+local direct db 0
+        push    eax ebx ecx edx esi edi
         mov     ebx,10
         mov     edx,0
         mov     eax,[worldWidth]
-
         div     ebx
         
-        shl     eax,2
-        add     eax,4
+        mov     [worldSplain.colPoints],eax
+        shl     eax,1
         
         invoke  VirtualAlloc, NULL, eax, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
-        mov     [worldPoints],eax
-        
+        mov     [worldSplain.x],eax 
         mov     esi,eax
-        add     esi,4
+
+        mov     eax,[worldSplain.colPoints]
+        shl     eax,1
+        
+        invoke  VirtualAlloc, NULL, eax, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [worldSplain.y],eax
+        mov     edi,eax
         
         mov     word[esi],0
-        mov     word[esi+2],worldHeight
-
+        stdcall biomeIs,0
+        mov     eax,[eax]
+        mov     ax,[eax+max]
+        
+        mov     [edi],ax
+        
+        mov     ecx,1
+        and     edx,0
+.lst:
+        mov     dx,[esi]
+        cmp     dx,word [worldWidth]
+        jae     .lend
+        
+        stdcall biomeIs,edx
+        mov     ebx,[eax]
+        mov     ax,[ebx+difFrequecy]
+        add     ax,dx
+         
+        add     esi,2
+        mov     [esi],ax
+        
+        xor     edx,edx
+        mov     dx,[ebx+maxDifference]
+        stdcall isLandsc,hills,edx
+        cmp     eax,0
+        je      @F
+        shl     edx,1
+        
 @@:
-        stdcall biomeIs,word[esi]
-        mov     edx,[eax]  
-        mov     bx,[esi]
-        add     bx,[edx+difFrequecy]
-        mov     word[esi+4], bx
+        stdcall randomB,0,edx
+        mov     dx,[edi]
         
-        mov     bx,[esi+2]
-        mov     cx,[edx+maxDifference]
+        dec     [directOst]
+        jnz     @F
+        not     [direct]
+        stdcall randomB,2,8
+        mov     [directOst],al
+@@:
+        cmp     [direct],0
+        je      .var1
+        sub     dx,ax
+        jmp     .var2     
+.var1:     
+        add     dx,ax
+.var2:
+
+        cmp     dx,[ebx+max]
+        jbe     @F
+        mov     dx,[ebx+max]
+        jmp     .endMaxMinCheck
+@@:
+        cmp     dx,[ebx+min]
+        jae     .endMaxMinCheck
+        mov     dx,[ebx+max]
+.endMaxMinCheck:
         
-        stdcall randomB,0,cx
-        mov     cx,ax
+        mov     ax,[edi]
+        sub     ax,dx
+        add     ax,25  
+        cmp     ax,50
+        jb      .zbs
+     
+        cmp     dx,[edi]
+        mov     dx,[edi]
+        jb      @F
+        add     dx,25
+        jmp     .zbs
+@@:
+        sub     dx,25
+.zbs: 
+        add     edi,2
+        mov     [edi],dx
+
+
+        inc     cx
+        jmp     .lst
+.lend:        
+        mov     dx,word [worldWidth]
+        mov     [esi],dx
         
+        mov     [worldSplain.colPoints],ecx
         
+        pop     edi esi edx ecx ebx eax
+        ret
+endp
+
+
+proc worldMakeH
+        mov     eax,[worldSplain.colPoints]
+        shl     eax,1
+        
+        invoke  VirtualAlloc, NULL, eax, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [worldSplain.h], eax
+
+        mov     edi,eax
+        mov     esi,[worldSplain.x]
+        mov     ecx,[worldSplain.colPoints]
+        
+        cld
+        rep     movsw
+        
+        lea     edi,[eax+2]
+        mov     esi,[worldSplain.x]
+        mov     ecx,[worldSplain.colPoints]
+        dec     ecx
+        
+@@:
+        lodsw   
+        sub     [edi],ax
+        
+        add     edi,2
+        dec     ecx
+        jnz     @B
         
         ret
 endp
 
 
+proc _3DiagMatrSolve count:DWORD,A:DWORD,B:DWORD,C:DWORD,D:DWORD,RES:DWORD
+local   M dd ?
+local   L dd ?
+local   bCount dd ?
+local   mOne dd -1
+        push    eax ebx ecx edx esi edi
+
+        mov     ebx,[count]
+        shl     ebx,2
+        mov     [bCount],ebx
+
+        invoke  VirtualAlloc, NULL, ebx, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     ecx,[RES]
+        mov     [ecx], eax
+        
+        invoke  VirtualAlloc, NULL, ebx, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [M], eax
+        mov     edi, eax
+        
+        invoke  VirtualAlloc, NULL, ebx, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [L], eax
+        
+        mov     esi, eax
+        
+        add     [bCount],eax
+
+        finit
+        mov     eax,[A]
+        mov     ecx,[C]
+        mov     ebx,[B]
+        add     eax,4
+        
+        fld     dword [ecx] 
+        fdiv    dword [ebx]
+        fimul   dword [mOne]
+        
+        fstp    dword [esi]
+        add     esi,4
+        add     ecx,4
+        add     ebx,4
+.lstL:  
+        fld     dword [esi-4]
+        fmul    dword [eax]
+        fadd    dword [ebx]
+        
+        fld     dword [ecx]
+        fdiv    st0,st1
+        fimul   dword [mOne]
+        
+        fstp    dword [esi]
+        ffree   st0
+        add     esi,4
+        add     eax,4
+        add     ebx,4
+        add     ecx,4
+        
+        cmp     esi,[bCount]
+        jb     .lstL     
+.lendL:        
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        
+        mov     eax,[A]
+        mov     ebx,[B]
+        mov     edx,[D]
+        
+        add     eax,4
+        
+        mov     esi,[L]
+        add     esi,4
+        
+        fld     dword [edx] 
+        fdiv    dword [ebx]
+        
+        fstp    dword [edi]
+        add     edi,4
+        add     ebx,4
+        add     edx,4
+
+.lstM:      
+        fld     dword [esi-4] 
+        fmul    dword [eax]
+        fadd    dword [ebx]
+          
+        fld     dword [edx]   
+        fld     dword [edi-4] 
+        fmul    dword [eax]  
+        
+        fsub    st0,st1
+        fdiv    st0,st2  
+
+        fstp    dword [edi] 
+        ffree   st0
+        ffree   st1       
+        add     edi,4
+        add     esi,4
+        
+        add     eax,4
+        add     ebx,4
+        add     edx,4
+        
+        cmp     esi,[bCount]            
+        jb      .lstM     
+.lendM:        
+
+        mov     ebx,[L]
+        sub     [bCount],ebx
+        add     ebx,[bCount]
+        sub     ebx,4
+        
+        mov     esi,[RES]
+        mov     esi,[esi]
+        mov     dword[esi],0
+        add     esi,[bCount]
+        
+        mov     eax,[edi-4]
+        mov     [esi-4],eax
+        
+        sub     edi,8
+        sub     esi,8
+        mov     eax,[M]
+        add     eax,4
+.lstRES:        
+        fld     dword [esi+4]
+        fmul    dword [ebx]
+        fadd    dword [edi]
+        fstp    dword [esi]
+        
+        sub     ebx,4
+        sub     esi,4
+        sub     edi,4
+        cmp     edi,eax
+        jae     .lstRES 
+.lendRES:                    
+        invoke  VirtualFree, [M], 0, MEM_RELEASE
+        invoke  VirtualFree, [L], 0, MEM_RELEASE
+        
+        pop     edi esi edx ecx ebx eax        
+        ret
+endp
+
+
+proc  makeC spl:DWORD
+local   bCount  dd ?
+local   lA  dd ?
+local   lB  dd ?
+local   lC  dd ?
+local   lD  dd ?
+local   dwa dd 2
+local   tri dd 3
+        pusha
+        mov     esi,[spl]
+        mov     ebx,[esi]
+        
+        sub     ebx,3
+        shl     ebx,2
+        mov     [bCount],ebx
+        
+        invoke  VirtualAlloc, NULL, ebx, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [lA], eax
+        invoke  VirtualAlloc, NULL, ebx, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [lB], eax
+        invoke  VirtualAlloc, NULL, ebx, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [lC], eax
+        invoke  VirtualAlloc, NULL, ebx, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [lD], eax
+
+        mov     edi,[esi+cOffs]
+        mov     ebx,[esi+hOffs]
+        
+        mov     dword [edi],0
+        add     edi,[bCount]
+        add     edi,8
+        mov     dword [edi],0
+        sub     edi,[bCount]
+        sub     edi,8
+        
+        mov     ecx,[esi]
+        sub     ecx,3
+        
+        mov     edi,[lA]
+        add     ebx,2
+        finit
+@@:        
+        fild    word [ebx]
+        fstp    dword [edi]
+        
+        add     ebx,2
+        add     edi,4
+        dec     ecx
+        jnz     @B
+.lendA:
+
+        mov     edi,[lB]
+        mov     ecx,[esi]
+        sub     ecx,3
+        mov     ebx,[esi+hOffs]
+        add     ebx,2
+@@:        
+        fild    word [ebx]
+        fiadd   word [ebx+2]
+        fimul   dword [dwa]
+        fstp    dword [edi]
+        
+        add     ebx,2
+        add     edi,4
+        dec     ecx
+        jnz     @B                
+.lendB: 
+
+        mov     edi,[lC]
+        mov     ecx,[esi]
+        sub     ecx,3
+        mov     ebx,[esi+hOffs]
+        add     ebx,4
+@@:        
+        fild    word [ebx]
+        fstp    dword [edi]
+        
+        add     ebx,2
+        add     edi,4
+        dec     ecx
+        jnz     @B                
+.lendC:
+
+        mov     edi,[lD]        
+        mov     ecx,[esi]
+        sub     ecx,3
+        
+        mov     ebx,[esi+hOffs]
+        add     ebx,2
+        
+        mov     edx,[esi+yOffs]
+        add     edx,2
+@@:     
+        fild    word [edx]
+        fisub   word [edx-2]
+        fidiv   word [ebx]
+   
+        fild    word [edx+2]
+        fisub   word [edx]
+        fidiv   word [ebx+2]
+        
+        fsub    st0,st1    
+        fimul   dword [tri]     
+        fstp    dword [edi]
+        ffree   st0
+        
+        add     edx,2
+        add     ebx,2
+        add     edi,4
+        dec     ecx
+        jnz     @B                
+.lendD:
+        
+        mov     ecx,[esi]
+        sub     ecx,3
+        add     esi,cOffs
+        stdcall _3DiagMatrSolve,ecx,[lA],[lB],[lC],[lD],esi
+        
+        invoke  VirtualFree, [lA], 0, MEM_RELEASE
+        invoke  VirtualFree, [lB], 0, MEM_RELEASE
+        invoke  VirtualFree, [lC], 0, MEM_RELEASE
+        invoke  VirtualFree, [lD], 0, MEM_RELEASE
+        
+        popa  
+        ret
+endp
+
+
+proc  makeSplain spl:DWORD
+local   bCount  dd ?
+local   dwa dd 2
+local   tri dd 3
+        pusha
+                
+        mov     esi,[spl]
+        mov     ebx,[esi]
+        shl     ebx,2
+        mov     [bCount],ebx
+
+        invoke  VirtualAlloc, NULL, ebx, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [esi+cOffs], eax
+        stdcall makeC, esi
+        
+        invoke  VirtualAlloc, NULL, ebx, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [esi+bOffs], eax
+        
+        invoke  VirtualAlloc, NULL, ebx, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [esi+dOffs], eax
+        mov     edi,[esi+cOffs]
+     
+.makeB:
+        mov     eax,[esi+yOffs]
+        add     eax,2
+        
+        mov     ebx,[esi+bOffs]
+        mov     word [ebx],0
+        mov     ecx,[esi+cOffs]
+        add     ecx,4
+        
+        mov     edi,[esi+hOffs]
+        add     edi,2
+        
+        mov     edx,[esi]
+        dec     edx
+        finit
+.lstB:        
+        fild    word [eax]
+        fisub   word [eax-2]
+        fidiv   word [edi]
+        
+        fild    word [edi]
+        fimul   dword [dwa]
+        fidiv   dword [tri]
+        fmul    dword [ecx]
+        fadd    st,st1
+        ffree   st1
+        
+        fild    word [edi]
+        fidiv   dword [tri]
+        fmul    dword [ecx-4]
+        fadd    st,st1
+        ffree   st1
+        
+        fstp    dword [ebx]
+        
+        add     ebx,4
+        add     edi,2
+        add     eax,2
+        add     ecx,4
+             
+        dec     edx
+        jnz     .lstB
+        
+.makeD:
+        mov     ecx,[esi+cOffs]
+        add     ecx,4
+        
+        mov     edi,[esi+hOffs]
+        add     edi,2
+        
+        mov     ebx,[esi+dOffs]
+        mov     dword [ebx],0
+        add     ebx,4
+        
+        mov     edx,[esi]
+        dec     edx
+.lstD:        
+        fld    dword [ecx]
+        fsub   dword [ecx-4]
+        fidiv   word [edi]
+        fidiv   dword [tri]
+        
+        fstp    dword [ebx]
+        
+        add     ebx,4
+        add     edi,2
+        add     ecx,4
+             
+        dec     edx
+        jnz     .lstD
+        
+        popa
+        ret
+endp
+
+
+proc  splainRes spl:DWORD,xMax:DWORD
+local Res dd ?
+local Size dd ?
+local LX dd ?
+local LA dd ?
+local LB dd ?
+local LC dd ?
+local LD dd ?
+local temp dd ?
+        push    esi edi ebx edx
+        mov     esi,[spl]
+        
+        mov     eax,[esi+xOffs]
+        mov     [LX],eax
+        
+        mov     eax,[esi+yOffs]
+        mov     [LA],eax
+        
+        mov     eax,[esi+bOffs]
+        mov     [LB],eax
+        
+        mov     eax,[esi+cOffs]
+        mov     [LC],eax
+        
+        mov     eax,[esi+dOffs]
+        mov     [LD],eax
+
+        mov     eax,[spl]
+        mov     eax,[eax]
+        mov     [Size],eax
+             
+        mov     eax,[xMax]
+        inc     eax
+        shl     eax,1
+        
+        invoke  VirtualAlloc, NULL, eax, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [Res], eax
+
+        xor     edi,edi
+        mov     esi,1
+        finit
+.lst1:
+        mov     edx,[LX]
+        lea     edx,[edx+esi*2]
+        movzx   eax,word [edx-2]
+        cmp     eax,[Size]
+        je      @F
+        
+        mov     ax,[edx]
+        cmp     edi,eax
+        jne     @F
+        inc     esi
+@@:
+        mov     edx,[LX]
+        lea     edx,[edx+esi*2]
+        mov     eax,edi
+        sub     ax,word [edx-2]
+        mov     [temp],eax
+        
+        mov     edx,[LA]
+        lea     edx,[edx + esi*2]
+        fild    word [edx]
+        
+        mov     edx,[LB]
+        lea     edx,[edx + esi*4]
+        fld     dword [edx]
+        fimul   dword [temp]
+        
+        mov     edx,[LC]
+        lea     edx,[edx + esi*4]
+        fld     dword [edx]
+        fimul   dword [temp]
+        fimul   dword [temp]
+        
+        mov     edx,[LD]
+        lea     edx,[edx + esi*4]
+        fld     dword [edx]
+        fimul   dword [temp]
+        fimul   dword [temp]
+        fimul   dword [temp]
+        
+        faddp
+        faddp
+        faddp
+        
+        mov     edx,[Res]
+        lea     edx,[edx + edi*2]
+        fistp   word [edx]
+        inc     edi
+        cmp     edi,[xMax]
+        jbe     .lst1
+        
+        mov     eax,[Res]
+        pop     edx ebx edi esi
+        ret
+endp
+
+
+proc  splainFree spl:DWORD
+        push    esi
+        mov     esi,[spl]
+        invoke  VirtualFree, [esi+xOffs], 0, MEM_RELEASE
+        invoke  VirtualFree, [esi+yOffs], 0, MEM_RELEASE
+        invoke  VirtualFree, [esi+bOffs], 0, MEM_RELEASE
+        invoke  VirtualFree, [esi+cOffs], 0, MEM_RELEASE
+        invoke  VirtualFree, [esi+dOffs], 0, MEM_RELEASE
+        invoke  VirtualFree, [esi+hOffs], 0, MEM_RELEASE
+        pop     esi
+        ret
+endp
+
+
+proc  worldMakeSplain 
+local tempSpl dd ?
+        stdcall worldMakePoints
+        stdcall worldMakeH
+        stdcall makeSplain,worldSplain
+
+        stdcall splainRes,worldSplain,[worldWidth]
+        mov     [tempSpl],eax
+        stdcall splainFree,worldSplain
+        mov     eax,[tempSpl]
+        ret
+endp
+
+proc  worldFirstGen
+local wRes dd ?
+local pyat dd 5
+local tri  dd 3
+local splRes dd ?
+local cavesSt dd ?
+local iterCount dd 60
+
+        stdcall biomeDistribution     
+        stdcall landsDistribution,woods
+        stdcall landsDistribution,hills
+        stdcall worldMakeSplain        
+        mov     [splRes],eax
+        
+        mov     eax,worldHeight
+        mul     dword [worldWidth]
+        shl     eax,2
+        
+        invoke  VirtualAlloc, NULL, eax, MEM_COMMIT + MEM_RESERVE, PAGE_READWRITE
+        mov     [wRes],eax
+
+.stZeroFill:
+        mov     eax,worldZeroHeight
+        mul     dword [worldWidth]
+        mov     ecx,eax
+        
+        cld
+        xor     eax,eax
+        mov     edi,[wRes]
+        rep     stosd
+.endZeroFill:        
+
+.stCavesFirstFill:
+        mov     eax,1
+        mov     ecx,[worldWidth]
+        rep     stosd
+        mov     [cavesSt],edi
+        add     [cavesSt],4
+        
+        mov     eax,worldHeight-worldZeroHeight-1
+        mul     dword [worldWidth]
+        mov     edx,eax
+        mov     ebx,[_gvSeed]
+@@:
+        randomInlineLITE ebx
+        mov     eax,ebx
+        and     eax,1
+        stosd
+        dec     edx
+        jnz     @B
+        mov     [_gvSeed],ebx
+.endCavesFirstFill:    
+    
+.stCavesSecondFill:
+        mov     ebx,[worldWidth]
+.lstC1:        
+        mov     dx,worldHeight-worldZeroHeight-2
+        mov     edi,[cavesSt]
+.lstC1_1:        
+        mov     ecx,ebx
+        sub     ecx,2
+@@:
+        mov     eax,[edi]
+        shl     eax,3
+        sumAround edi,ebx
+        
+        lea     eax,[_genNaD_Table + eax*4]
+        mov     eax,[eax]
+        mov     [edi],eax
+        add     edi,4
+        dec     ecx
+        jnz     @B
+        
+        add     edi,8
+        dec     dx
+        jnz     .lstC1_1
+
+        dec     [iterCount]
+        jnz     .lstC1 
+        
+.cavesInterpol:
+        mov     dx,worldHeight-worldZeroHeight-2
+        mov     edi,[cavesSt]
+.lstC2:        
+        mov     ecx,ebx
+        sub     ecx,2
+@@:
+        xor     eax,eax
+        sumAround edi,ebx
+        
+        cmp     eax,4
+        ja      @F
+        mov     dword[edi],0
+        jmp     .skip
+@@: 
+        mov     dword[edi],1
+.skip:
+        add     edi,4
+        dec     ecx
+        jnz     @B
+        
+        add     edi,8
+        dec     dx
+        jnz     .lstC2
+                       
+.endCavesSecondFill:
+
+.stLandScFill:
+        mov     eax,worldZeroHeight
+        mul     dword [worldWidth]
+        xchg    eax,edx
+        shl     edx,2
+        add     edx, [wRes]
+        xor     ecx,ecx
+.lstL1:
+        and     ecx,0x7FFFFFFF
+        mov     esi, [worldWidth]
+
+.lstL1_1:
+        mov     ebx,[splRes]
+        lea     edi,[ebx+esi*2-2]                       
+        mov     bx,[edi]
+                
+        cmp     bx,0
+        jle      .nextIt
+        
+        or      ecx,0x80000000
+        dec     word[edi]
+        lea     edi,[edx+esi*4-4]
+                
+        cmp     bx,7
+        jbe     @F
+        mov     dword[edi],1
+        jmp     .nextIt
+@@:        
+        stdcall biomeIs,esi
+        cmp     bx,2
+        jbe     @F
+        mov     eax,[eax+biomeBottomBlockOffs]
+        mov     dword[edi],eax
+        jmp     .nextIt
+@@:   
+        mov     eax,[eax+biomeUpperBlockOffs]
+        mov     dword[edi],eax
+.nextIt:        
+        dec     esi
+        jnz     .lstL1_1
+        
+        sub     edx,[worldWidth]
+        inc     ecx
+        test    ecx,0x80000000
+        jnz     .lstL1
+.endLandScFill:
+        mov     eax,[wRes]        
+        ret
+endp
+
+proc worldGen seed:DWORD,pWorldWidth:DWORD
+        mov     eax,[seed]
+        mov     [_gvSeed],eax
+        mov     eax,[pWorldWidth]
+        mov     [worldWidth],eax
+        stdcall worldFirstGen
+
+        ret
+endp
+
 start:       
         stdcall readBiomeInfo
         
-        stdcall biomeDistribution     
-
-        
-        stdcall landsDistribution,woods
+        stdcall worldGen,300,3000
         
         invoke MessageBox,0,_buffer,0,MB_ICONERROR+MB_OK
         invoke ExitProcess,0
-
-
 
 section '.idata' import data readable writeable
 
